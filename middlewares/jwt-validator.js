@@ -22,7 +22,7 @@ const validatorJWT = ( req, res = response, next ) => {
         req.user = user;
 
     } catch (error) {
-        return response.status(401).json({
+        return res.status(401).json({
             ok: false,
             msg: 'Token no válido'
         });
