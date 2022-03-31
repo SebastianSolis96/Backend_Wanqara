@@ -26,9 +26,9 @@ router.post( '/login',
     ],
     loginScae );
 
-router.get('/empresas', validatorJWT, listEmpresas);
+router.post('/empresas', validatorJWT, listEmpresas);
 
-router.get('/miempresa', validatorJWT, listEmpresaByCodigo);
+router.post('/miempresa', validatorJWT, listEmpresaByCodigo);
 
 router.get('/renew', validatorJWT , renewToken);
 

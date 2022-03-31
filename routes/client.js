@@ -12,13 +12,13 @@ const { validatorJWT } = require('../middlewares/jwt-validator');
 //Todas las rutas deben pasar por la validación del JWT
 router.use( validatorJWT );
 
-router.get( '/', listUltimoCliente );
+router.post( '/', listUltimoCliente );
 
-router.get( '/:id', listClienteByCodigo );
+router.post( '/:id', listClienteByCodigo );
 
-router.get( '/buscador/clientes', listClientes );
+router.post( '/buscador/clientes', listClientes );
 
-router.get( '/buscador/clientes/:id', listClientesByParam );
+router.post( '/buscador/clientes/:id', listClientesByParam );
 
 router.post( '/', [
     check('codigo', 'El código es obligatorio').not().isEmpty(),
