@@ -24,6 +24,8 @@ const listUltimoCliente = async ( req, res = response ) => {
             msg: result.rows[0]
         });
 
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -63,6 +65,8 @@ const listClienteByCodigo = async ( req, res = response ) => {
             msg: result.rows[0]
         });
 
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -93,12 +97,14 @@ const listClientes = async ( req, res = response ) => {
         const pool = db(user, password, database);
         const result = await pool.query(
             `SELECT CODIGOC, RUC, NOMBREC, DIRECCION, TELEFONO, E_MAIL, CIUDAD, REG_IVA 
-            FROM ${ schema }.SCDETACLI`);
+            FROM ${ schema }.SCDETACLI  ORDER BY HORA DESC`);
             
         res.json({
             ok: true,
             msg: result.rows,
         });
+
+        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -144,6 +150,56 @@ const listClientesByParam = async ( req, res = response ) => {
             msg: result.rows
         });
 
+        pool.end();
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
+const checkClientOnInvoices = async ( req, res = response ) => {
+
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    const { id } = req.params;
+    
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT FACT.CLIENTE FROM ${ schema }.SCENCFAC FACT INNER JOIN DEMOSCAE.SCDETACLI CLI 
+            ON FACT.CLIENTE = CLI.CODIGOC WHERE CODIGOC = $1`, [id]);
+        
+        if( result.rows.length > 0 ){
+            res.json({
+                ok: true,
+                msg: result.rows
+            });
+        }else{
+            res.json({
+                ok: false,
+                msg: 'No existen facturas de este cliente'
+            });
+        }
+
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -161,7 +217,7 @@ const listClientesByParam = async ( req, res = response ) => {
 }
 
 const saveCliente = async ( req, res = response ) => {
-
+    
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, userScae } = req.body;        
     let { codigo, ruc, nombre, grabaIva, direccion, telefono, correo } = req.body;
 
@@ -179,7 +235,6 @@ const saveCliente = async ( req, res = response ) => {
 
     //Desencriptar schema y usuario.
     const schema = decryptWord(schemaEncrypt);
-    const userScaeDecrypt = decryptWord(userScae);
 
     try {
         const pool = db(user, password, database);
@@ -216,13 +271,15 @@ const saveCliente = async ( req, res = response ) => {
                 0, '', localtimestamp, $8, '', 
                 '', '', '', '', 0, 
                 '', 0, '', '', '', 0) RETURNING *`, [
-                    codigo, nombre, ruc, direccion, telefono, correo, grabaIva, userScaeDecrypt
+                    codigo, nombre, ruc, direccion, telefono, correo, grabaIva, userScae
                 ]);
-            
+        console.log(result.rows);    
         res.json({
             ok: true,
             msg: result.rows[0]
         });
+
+        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -275,6 +332,8 @@ const updateCliente = async ( req, res = response ) => {
             msg: result.rows[0]
         });
 
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -289,6 +348,7 @@ const updateCliente = async ( req, res = response ) => {
             });
         }
     }
+    
 }
 
 const deleteCliente = async ( req, res = response ) => {
@@ -320,6 +380,8 @@ const deleteCliente = async ( req, res = response ) => {
             msg: 'Cliente eliminado'
         });
 
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -341,6 +403,7 @@ module.exports = {
     listClientes,
     listClienteByCodigo,
     listClientesByParam,
+    checkClientOnInvoices,
     saveCliente,
     updateCliente,
     deleteCliente

@@ -5,7 +5,7 @@ const { Router } = require('express');
 const router = Router();
 
 const { check } = require('express-validator');
-const { listUltimoCliente, listClientes, listClienteByCodigo, listClientesByParam, saveCliente, updateCliente, deleteCliente } = require('../controllers/client');
+const { listUltimoCliente, listClientes, listClienteByCodigo, listClientesByParam, checkClientOnInvoices, saveCliente, updateCliente, deleteCliente } = require('../controllers/client');
 const { fieldValidator } = require('../middlewares/field-validator');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
@@ -20,7 +20,7 @@ router.post( '/buscador/clientes', listClientes );
 
 router.post( '/buscador/clientes/:id', listClientesByParam );
 
-router.post( '/', [
+router.post( '/actions/clientes', [
     check('codigo', 'El código es obligatorio').not().isEmpty(),
     check('ruc', 'El RUC es obligatorio').not().isEmpty(),
     check('ruc', 'El RUC debe tener al menos 10 dígitos').isLength({ min: 10 }),
@@ -29,7 +29,9 @@ router.post( '/', [
     fieldValidator
 ], saveCliente );
 
-router.put( '/:id', [
+router.post( '/actions/clientes/:id', checkClientOnInvoices );
+
+router.put( '/actions/clientes/:id', [
     check('ruc', 'El RUC es obligatorio').not().isEmpty(),
     check('ruc', 'El RUC debe tener al menos 10 dígitos').isLength({ min: 10 }),
     check('nombre', 'El nombre del cliente es obligatorio').not().isEmpty(),
@@ -37,6 +39,6 @@ router.put( '/:id', [
     fieldValidator
 ], updateCliente );
 
-router.delete( '/:id', deleteCliente );
+router.delete( '/actions/clientes/:id', deleteCliente );
 
 module.exports = router;

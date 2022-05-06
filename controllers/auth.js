@@ -26,11 +26,18 @@ const credentialsValidator = async ( req, res = response ) => {
             database: databaseEncrypt
         });
 
+        pool.end();
+
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
                 ok: false,
                 msg: 'Credenciales incorrectas'
+            });
+        }else if( error.code === '53300' ){
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
             });
         }else{
             return res.status(500).json({
@@ -72,6 +79,8 @@ const loginScae = async ( req, res = response ) => {
                 token
             });
 
+            pool.end();
+
         }else{
             return res.status(400).json({
                 ok: false,
@@ -79,17 +88,21 @@ const loginScae = async ( req, res = response ) => {
             });
         }
 
-
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
                 ok: false,
                 msg: 'Credenciales incorrectas'
             });
+        }else if( error.code === '53300' ){
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
+            });
         }else{
             return res.status(500).json({
                 ok: false,
-                msg: 'Ha ocurrido un error',
+                msg: 'Datos incorrectos',
                 error: error
             });
         }
@@ -111,6 +124,8 @@ const listEmpresas = async ( req, res = response ) => {
             ok: true,
             msg: result.rows
         });
+
+        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -147,6 +162,8 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
             msg: result.rows[0],
             schema: directorioEncrypt
         });
+
+        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
