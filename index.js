@@ -17,6 +17,7 @@ app.use( express.json() );
 //RUTAS
 app.use('/api/auth', require('./routes/auth') );
 app.use('/api/client', require('./routes/client') );
+app.use('/api/product', require('./routes/product') );
 
 //ESCUCHAR PETICIONES
 app.listen( process.env.PORT, () => {

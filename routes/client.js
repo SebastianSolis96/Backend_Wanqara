@@ -23,7 +23,7 @@ router.post( '/buscador/clientes/:id', listClientesByParam );
 router.post( '/actions/clientes', [
     check('codigo', 'El código es obligatorio').not().isEmpty(),
     check('ruc', 'El RUC es obligatorio').not().isEmpty(),
-    check('ruc', 'El RUC debe tener al menos 10 dígitos').isLength({ min: 10 }),
+    check('ruc', 'El RUC debe tener al menos 10 dígitos y no puede contener caracteres especiales o letras').isNumeric().isLength({ min: 10, max: 13 }),
     check('nombre', 'El nombre del cliente es obligatorio').not().isEmpty(),
     check('correo', 'El correo electrónico debe ser uno válido').if(check('correo').not().equals('')).isEmail(), 
     fieldValidator
