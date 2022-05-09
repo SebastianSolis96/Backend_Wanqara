@@ -373,7 +373,7 @@ const deleteCliente = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(
-            `DELETE FROM ${ schema }.SCDETACLI WHERE codigoc=$1`, [ id ]);
+            `DELETE FROM ${ schema }.SCDETACLI WHERE codigoc=$1 RETURNING *`, [ id ]);
         
         if( result.rowCount === 0 ){
             return res.status(404).json({
@@ -384,7 +384,8 @@ const deleteCliente = async ( req, res = response ) => {
 
         res.status(400).json({
             ok: true,
-            msg: 'Cliente eliminado'
+            msg: 'Cliente eliminado',
+            deleted: result.rows[0]
         });
 
         pool.end();

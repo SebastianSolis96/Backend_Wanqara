@@ -367,7 +367,8 @@ const deleteProducto = async ( req, res = response ) => {
 
         res.status(400).json({
             ok: true,
-            msg: 'Artículo eliminado'
+            msg: 'Artículo eliminado',
+            deleted: result.rows[0]
         });
 
         pool.end();
