@@ -263,7 +263,7 @@ const checkProductoOnInvoices = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(
-            `SELECT FACT.CODIGO FROM DEMOSCAE.SCRENFAC FACT INNER JOIN DEMOSCAE.SCDETAART ART 
+            `SELECT FACT.CODIGO FROM ${ schema }.SCRENFAC FACT INNER JOIN ${ schema }.SCDETAART ART 
             ON FACT.CODIGO = ART.CODIGOA WHERE CODIGOA = $1`, [id]);
         
         if( result.rows.length > 0 ){
@@ -274,7 +274,7 @@ const checkProductoOnInvoices = async ( req, res = response ) => {
         }else{
             res.json({
                 ok: false,
-                msg: 'No existen facturas de este cliente'
+                msg: 'No existen facturas con este artículo'
             });
         }
 
@@ -312,9 +312,10 @@ const updateProducto = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(
-            `UPDATE ${ schema }.SCDETAART SET nombrea=$1, bodega=$2, grupo=$3, 
-            precio_1=$4, impuesto=$5, servicio=$6 WHERE codigoa=$7 RETURNING *`, [
-                nombre, bodega, grupo, precio, impuesto, servicio, id
+            `UPDATE ${ schema }.SCDETAART SET nombrea=$1, grupo=$2, 
+            precio_1=$3, impuesto=$4, servicio=$5 
+            WHERE codigoa=$6 AND bodega=$7 RETURNING *`, [
+                nombre, grupo, precio, impuesto, servicio, id, bodega
             ]);
             
         res.json({
@@ -344,6 +345,7 @@ const updateProducto = async ( req, res = response ) => {
 const deleteProducto = async ( req, res = response ) => {
 
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+    const { bodega } = req.body;
 
     const { id } = req.params;
 
@@ -356,7 +358,8 @@ const deleteProducto = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(
-            `DELETE FROM ${ schema }.SCDETAART WHERE codigoa=$1`, [ id ]);
+            `DELETE FROM ${ schema }.SCDETAART 
+            WHERE codigoa=$1 AND bodega=$2 RETURNING *`, [ id, bodega ]);
         
         if( result.rowCount === 0 ){
             return res.status(404).json({

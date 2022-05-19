@@ -190,7 +190,7 @@ const checkClientOnInvoices = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(
-            `SELECT FACT.CLIENTE FROM ${ schema }.SCENCFAC FACT INNER JOIN DEMOSCAE.SCDETACLI CLI 
+            `SELECT FACT.CLIENTE FROM ${ schema }.SCENCFAC FACT INNER JOIN ${ schema }.SCDETACLI CLI 
             ON FACT.CLIENTE = CLI.CODIGOC WHERE CODIGOC = $1`, [id]);
         
         if( result.rows.length > 0 ){

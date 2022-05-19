@@ -19,6 +19,7 @@ app.use('/api/auth', require('./routes/auth') );
 app.use('/api/client', require('./routes/client') );
 app.use('/api/product', require('./routes/product') );
 app.use('/api/store', require('./routes/store') );
+app.use('/api/invoice', require('./routes/invoice') );
 
 //ESCUCHAR PETICIONES
 app.listen( process.env.PORT, () => {
