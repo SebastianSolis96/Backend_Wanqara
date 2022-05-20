@@ -5,7 +5,7 @@ const { Router } = require('express');
 const router = Router();
 
 const { check } = require('express-validator');
-const { listUltimoProducto, listProductoByCodigo, listProductos, listProductosByParam, checkProductoOnInvoices, saveProducto, updateProducto, deleteProducto, listGruposArticulos } = require('../controllers/product');
+const { listUltimoProducto, listProductoByCodigo, listProductos, listProductosByParam, checkProductoOnInvoices, saveProducto, updateProducto, deleteProducto, listGruposArticulos, listArticulosPorFactura } = require('../controllers/product');
 const { fieldValidator } = require('../middlewares/field-validator');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
@@ -53,5 +53,7 @@ router.put( '/actions/productos/:id', [
 router.delete( '/actions/productos/:id', deleteProducto );
 
 router.post( '/extra/grupos', listGruposArticulos );
+
+router.post( '/extra/artbyfactura', listArticulosPorFactura );
 
 module.exports = router;

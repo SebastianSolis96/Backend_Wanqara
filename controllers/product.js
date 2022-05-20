@@ -430,6 +430,47 @@ const listGruposArticulos = async ( req, res = response ) => {
 
 }
 
+const listArticulosPorFactura = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+    const { factura } = req.body;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT bodega, codigo, detalle, cantidad, 
+            precio, descto, total, impuesto 
+            FROM ${ schema }.screnfac where factura = $1;`
+            , [factura] );
+        console.log(result.rows);
+        res.json({
+            ok: true,
+            msg: result.rows,
+        });
+
+        pool.end();
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     listUltimoProducto,
     listProductoByCodigo,
@@ -440,4 +481,5 @@ module.exports = {
     updateProducto,
     deleteProducto,
     listGruposArticulos,
+    listArticulosPorFactura,
 }

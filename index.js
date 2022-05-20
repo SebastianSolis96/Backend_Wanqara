@@ -20,6 +20,8 @@ app.use('/api/client', require('./routes/client') );
 app.use('/api/product', require('./routes/product') );
 app.use('/api/store', require('./routes/store') );
 app.use('/api/invoice', require('./routes/invoice') );
+app.use('/api/method', require('./routes/methodPay') );
+app.use('/api/seller', require('./routes/seller') );
 
 //ESCUCHAR PETICIONES
 app.listen( process.env.PORT, () => {
