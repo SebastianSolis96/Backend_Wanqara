@@ -88,6 +88,7 @@ const listUltimaFactura = async ( req, res = response ) => {
     const schema = decryptWord(schemaEncrypt);
 
     try {
+        //Encabezado última factura
         const pool = db(user, password, database);
         const result = await pool.query(
             `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
@@ -100,17 +101,39 @@ const listUltimaFactura = async ( req, res = response ) => {
 
             ultimaFactura = result.rows[0];
             pool.end();
+            
+            //Traer el código del cliente y prepararlo
+            const id = ultimaFactura.cliente.trim();
+            const idUpperCase = id.toUpperCase();
+            const idLowerCase = id.toLowerCase();
+            const idCapital = idLowerCase.replace(/^\w/, (c) => c.toUpperCase());
 
-            const pool1 = db(user, password, database);
-            const result1 = await pool1.query(
+            //Buscar cliente de la factura por código para saber si graba IVA o no
+            const poolIvaClienteFactura = db(user, password, database);
+            const resultClienteFactura = await poolIvaClienteFactura.query(
+                `SELECT CODIGOC, RUC, NOMBREC, DIRECCION, TELEFONO, E_MAIL, CIUDAD, REG_IVA 
+                FROM ${ schema }.SCDETACLI WHERE 
+                CODIGOC = $1 OR CODIGOC = $2 OR CODIGOC = $3 OR CODIGOC = $4`,
+                [id, idUpperCase, idLowerCase, idCapital]);
+            
+            //Prepar indicador para si graba IVA o no el cliente en número
+            let indicadorIvaCliente = resultClienteFactura.rows[0].reg_iva.trim();
+            indicadorIvaCliente = parseInt(indicadorIvaCliente);
+            
+            //Agregar al objeto ultimaFactura el indicador de si el cliente en factura graba IVA o no
+            ultimaFactura.clienteRegistraIva = indicadorIvaCliente;
+            poolIvaClienteFactura.end();
+
+            const poolDetalleFactura = db(user, password, database);
+            const resultDetalleFactura = await poolDetalleFactura.query(
                 `SELECT bodega, codigo, detalle, cantidad, 
                 precio, descto, total, impuesto 
                 FROM ${ schema }.screnfac where factura = $1;`
                 , [ultimaFactura.factura] );
             
-            ultimaFactura.listProducts = result1.rows;
-            console.log(ultimaFactura);
-            pool1.end();
+            ultimaFactura.listProducts = resultDetalleFactura.rows;
+            poolDetalleFactura.end();
+            
         }else
             ultimaFactura = {};
 
