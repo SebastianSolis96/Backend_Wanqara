@@ -158,8 +158,187 @@ const listUltimaFactura = async ( req, res = response ) => {
     }
 }
 
+const saveFactura = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, user:userScae } = req.body;        
+    const { vendedor, dividendos, factura, listProducts, clienteRegistraIva, fecha, vence, tip, 
+        bodega, comentario, cliente, ruc, nombrec, direccion, telefono, email, bruto,
+        base_0, base_i, impuesto, total, neto, descto, pdescto } = req.body;
+    
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        //Traer el nombre de la bodega por el código
+        const poolVendedor = db(user, password, database);
+        const resultVendedor = await poolVendedor.query(`SELECT codigoven, nombreven FROM ${ schema }.scdetaven  
+            WHERE codigoven = $1`, [vendedor.trim()]);
+        const nombreVendedor = resultVendedor.rows[0].nombreven.trim(); //$24 = nvendedor
+        poolVendedor.end();
+
+        const poolDividendos = db(user, password, database);
+        const resultDividendos = await poolDividendos.query(`SELECT codigo, detalle FROM ${ schema }.scctadiv WHERE codigo = $1`, [dividendos.trim()]);
+        const nombreDividendos = resultDividendos.rows[0].detalle.trim(); //$25 = nforma
+
+        poolDividendos.end();
+
+        const pool = db(user, password, database);
+
+        const result = await pool.query(
+            `INSERT INTO ${ schema }.scencfac (factura, fecha, vence, tip, dividendos, 
+                vendedor, bodega, comentario, cliente, ruc, 
+                nombrec, direccion, telefono, email, bruto, 
+                base_0, base_i, impuesto, total, neto, 
+                descto, pdescto, usuario, hora, forigen, 
+                fechac,  pasaporte, cajero, cf, otros, 
+                guia, pedido, codtr, nomtr, cedtr, 
+                placatr, empresa, directr, nvendedor, nforma, 
+                ngrupo, fechas, cprecio, efectivo, cuotas, 
+                dgracia, dintervalo, interes, mcuotas, c_costo, 
+                asignado, grupo, fue, numcaja, cambios, 
+                tip_fac, pedido_c, origen, anulado, refer1, 
+                refer2, refer3, refer4, autoriza, desde, 
+                hasta, fcaduca, lst, tddv, ctc, 
+                baseimp2, impto2, ice, transfer, cxc, 
+                cimp, fp, base_i_acc, base_i_asc, base_0_acc, 
+                base_0_asc, temporada, print_cod, access_cod, auto_cod, 
+                print_guia, acces_guia, auto_guia, guia_hija, carga, 
+                cfrio, claveauto, horaauto, firmado, tipo_emi, 
+                cmotivo, variedad, log, tcarga, tcfrio, 
+                guiafirma, autoguia, guiahora, guiaclave, dae, 
+                piva, motivo, pdesde, phasta, factor, 
+                aumento, tarjeta1, tarjeta2, tarjeta3, montot1, 
+                montot2, montot3, lote1, lote2, lote3, 
+                clote, credito, cm, cuenta1, cuenta2, 
+                cuenta3) 
+                VALUES ($1, $2, $3, $4, $5, 
+                    $6, $7, $8, $9, $10, 
+                    $11, $12, $13, $14, $15, 
+                    $16, $17, $18, $19, $20, 
+                    $21, $22, $23, localtimestamp, '', 
+                    localtimestamp, 0, '', 0, 0.00, 
+                    '', '', '', '', '', 
+                    '', '', '', $24, $25, 
+                    '', '', '', 0.00, 0, 
+                    0, '', 0, 0.00, '', 
+                    0, '', '', '', 0, 
+                    0, '', '', '', '', 
+                    '', '', '', '', '', 
+                    '', localtimestamp, '', '', '', 
+                    0.00, 0.00, '', '', 0, 
+                    1, '', 0.00, 0.00, 0.00, 
+                    0.00, '', 0, '', '', 
+                    0, '', '', '', '', 
+                    '', '', '', 0, 0, 
+                    '', '', '', '', '', 
+                    0, '', '', '', '', 
+                    0, '', '', '', 0.00, 
+                    0, '', '', '', 0.00, 
+                    0.00, 0.00, '', '', '', 
+                    0, 0.00, 0, '', '', 
+                    '') RETURNING *`, [
+                        factura, fecha, vence, tip, dividendos, 
+                        vendedor, bodega, comentario, cliente, ruc,
+                        nombrec, direccion, telefono, email, bruto,
+                        base_0, base_i, impuesto, total, neto,
+                        descto, pdescto, userScae, nombreVendedor, nombreDividendos 
+                    ]);
+
+            let encabezadoGuardado = null;
+            encabezadoGuardado = result.rows[0];
+
+            pool.end();
+
+            //Guardar detalle de la factura
+            if( encabezadoGuardado ) {
+                //Traer el último id y aumentar uno
+                const poolId = db(user, password, database);
+                const resultId = await poolId.query(`SELECT id FROM ${ schema }.screnfac order by id desc limit 1;`);
+                let id = 0
+                if( resultId.rows.length > 0 )
+                    id = parseInt(resultId.rows[0].id);
+                id = id + 1;
+
+                poolId.end();
+
+                let listProductsSaved = [];
+                listProducts.forEach(async product => {
+                    const { codigo, detalle, cantidad, precio, descto, total, bodega, impuesto } = product;
+                    
+                    const poolDetalle = db(user, password, database);
+                    const resultDetalle = await poolDetalle.query(
+                        `INSERT INTO ${ schema }.screnfac (factura, codigo, detalle, cantidad, precio, 
+                            descto, total, bodega, impuesto, usuario, 
+                            hora, convertir, comentario, completo, unidad, 
+                            serial, detserial, fechaser, reembolso, uconvertir, 
+                            nomgru, c_costo, medida, origen, cambios, 
+                            bonifica, comenn, servicio, c_barra, activo, 
+                            deducible, tipo, ptarj, id) 
+                            VALUES ($1, $2, $3, $4, $5, 
+                                $6, $7, $8, $9, $10, 
+                                localtimestamp, 0.00, '', 1, 'UND', 
+                                '', '', localtimestamp, 0.00, '', 
+                                '', '', 0.00, 'FAC', 0, 
+                                0.00, '', 0, '', 0, 
+                                1, '', 0.00, $11) RETURNING *`, [
+                                    factura, codigo, detalle, cantidad, precio,
+                                    descto, total, bodega, impuesto, userScae, id
+                                ]);
+                                
+                    //ME QUEDÉ AQUÍ
+                    listProductsSaved.push({...resultDetalle.rows[0]});
+                    console.log(listProductsSaved);
+                    poolDetalle.end();
+                });
+                
+                if( listProductsSaved.length > 0 ) {
+                    const activeInvoice = { 
+                        ...encabezadoGuardado, 
+                        listProducts: listProductsSaved, 
+                        clienteRegistraIva: clienteRegistraIva,
+                    };
+
+                    return res.json({
+                        ok: true,
+                        msg: activeInvoice
+                    });
+
+                }else{
+                    return res.status(400).json({
+                        ok: false,
+                        msg: 'Error al guardar el detalle de la factura'
+                    });
+                }
+
+            }else{
+                res.json({
+                    ok: false,
+                    msg: 'Error al guardar el encabezado de la factura'
+                });
+            }
+
+    } catch (error) {
+        console.log(error);
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
     listUltimaFactura,
+    saveFactura,
 }
