@@ -97,10 +97,10 @@ const listUltimaFactura = async ( req, res = response ) => {
             FROM ${ schema }.scencfac ORDER BY factura DESC LIMIT 1`);
         
         let ultimaFactura;
+        
+        pool.end();
         if( result.rows.length > 0 ){
-
             ultimaFactura = result.rows[0];
-            pool.end();
             
             //Traer el código del cliente y prepararlo
             const id = ultimaFactura.cliente.trim();
@@ -158,13 +158,164 @@ const listUltimaFactura = async ( req, res = response ) => {
     }
 }
 
+const listFacturaByNumber  = async (req, res) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+    const { id } = req.params;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+    try {
+        //Encabezado última factura
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
+            cliente, ruc, nombrec, direccion, telefono, email, 
+            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto 
+            FROM ${ schema }.scencfac WHERE factura = $1`, [id]);
+        
+        pool.end();
+
+        let facturaEncontrada;
+        if( result.rows.length > 0 ){
+
+            facturaEncontrada = result.rows[0];
+            
+            //Traer el código del cliente y prepararlo
+            const idCliente = facturaEncontrada.cliente.trim();
+            const idUpperCase = idCliente.toUpperCase();
+            const idLowerCase = idCliente.toLowerCase();
+            const idCapital = idLowerCase.replace(/^\w/, (c) => c.toUpperCase());
+
+            //Buscar cliente de la factura por código para saber si graba IVA o no
+            const poolIvaClienteFactura = db(user, password, database);
+            const resultClienteFactura = await poolIvaClienteFactura.query(
+                `SELECT CODIGOC, RUC, NOMBREC, DIRECCION, TELEFONO, E_MAIL, CIUDAD, REG_IVA 
+                FROM ${ schema }.SCDETACLI WHERE 
+                CODIGOC = $1 OR CODIGOC = $2 OR CODIGOC = $3 OR CODIGOC = $4`,
+                [idCliente, idUpperCase, idLowerCase, idCapital]);
+            
+            //Preparar indicador para si graba IVA o no el cliente en número
+            let indicadorIvaCliente = resultClienteFactura.rows[0].reg_iva.trim();
+            indicadorIvaCliente = parseInt(indicadorIvaCliente);
+            
+            //Agregar al objeto facturaEncontrada el indicador de si el cliente en factura graba IVA o no
+            facturaEncontrada.clienteRegistraIva = indicadorIvaCliente;
+            poolIvaClienteFactura.end();
+
+            const poolDetalleFactura = db(user, password, database);
+            const resultDetalleFactura = await poolDetalleFactura.query(
+                `SELECT bodega, codigo, detalle, cantidad, 
+                precio, descto, total, impuesto 
+                FROM ${ schema }.screnfac where factura = $1;`
+                , [facturaEncontrada.factura] );
+            
+            facturaEncontrada.listProducts = resultDetalleFactura.rows;
+            poolDetalleFactura.end();
+            
+        }else
+            facturaEncontrada = {};
+
+        res.json({
+            ok: true,
+            msg: facturaEncontrada
+        });
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
+// const saveDetalle = async( listProducts, id, schema, userScae, user, password, database, factura ) => {
+//     listProducts.forEach(async (product) => {
+//         const { codigo, detalle, cantidad, precio, descto, total, bodega, impuesto } = product;
+//         const poolDetalle = db(user, password, database);
+//         const resultDetalle = await poolDetalle.query(
+//             `INSERT INTO ${ schema }.screnfac (factura, codigo, detalle, cantidad, precio, 
+//                 descto, total, bodega, impuesto, usuario, 
+//                 hora, convertir, comentario, completo, unidad, 
+//                 serial, detserial, fechaser, reembolso, uconvertir, 
+//                 nomgru, c_costo, medida, origen, cambios, 
+//                 bonifica, comenn, servicio, c_barra, activo, 
+//                 deducible, tipo, ptarj, id) 
+//                 VALUES ($1, $2, $3, $4, $5, 
+//                     $6, $7, $8, $9, $10, 
+//                     localtimestamp, 0.00, '', 1, 'UND', 
+//                     '', '', localtimestamp, 0.00, '', 
+//                     '', '', 0.00, 'FAC', 0, 
+//                     0.00, '', 0, '', 0, 
+//                     1, '', 0.00, $11) RETURNING *`, [
+//                         factura, codigo, detalle, cantidad, precio,
+//                         descto, total, bodega, impuesto, userScae, id
+//                     ]);
+//         poolDetalle.end();
+//     });
+//     // console.log(resultDetalle);
+//     // poolDetalle.end();
+// }
+
+const lastNumFactura = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT factura FROM ${ schema }.scencfac ORDER BY factura DESC LIMIT 1`);
+        pool.end();
+        
+        if( result.rows.length > 0 ){
+            res.json({
+                ok: true,
+                msg: result.rows[0].factura
+            });
+        }else{
+            res.json({
+                ok: true,
+                msg: null
+            });
+        }
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
 const saveFactura = async ( req, res = response ) => {
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, user:userScae } = req.body;        
     const { vendedor, dividendos, factura, listProducts, clienteRegistraIva, fecha, vence, tip, 
         bodega, comentario, cliente, ruc, nombrec, direccion, telefono, email, bruto,
         base_0, base_i, impuesto, total, neto, descto, pdescto } = req.body;
-    
-    //Desencriptar credenciales
+
     const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
 
     //Desencriptar schema y usuario.
@@ -253,21 +404,24 @@ const saveFactura = async ( req, res = response ) => {
 
             //Guardar detalle de la factura
             if( encabezadoGuardado ) {
-                //Traer el último id y aumentar uno
-                const poolId = db(user, password, database);
-                const resultId = await poolId.query(`SELECT id FROM ${ schema }.screnfac order by id desc limit 1;`);
-                let id = 0
-                if( resultId.rows.length > 0 )
-                    id = parseInt(resultId.rows[0].id);
-                id = id + 1;
-
-                poolId.end();
-
+                
                 let listProductsSaved = [];
-                listProducts.forEach(async product => {
-                    const { codigo, detalle, cantidad, precio, descto, total, bodega, impuesto } = product;
-                    
+                const listProductsLength = listProducts.length;
+
+                for( let i = 0; i < listProductsLength; i++ ) {
+
+                    //Traer el último id y aumentar uno
+                    const poolId = db(user, password, database);
+                    const resultId = await poolId.query(`SELECT id FROM ${ schema }.screnfac order by id desc limit 1;`);
+                    let id = 0
+                    if( resultId.rows.length > 0 )
+                        id = parseInt(resultId.rows[0].id);
+                    id = id + 1;
+
+                    poolId.end();
+
                     const poolDetalle = db(user, password, database);
+
                     const resultDetalle = await poolDetalle.query(
                         `INSERT INTO ${ schema }.screnfac (factura, codigo, detalle, cantidad, precio, 
                             descto, total, bodega, impuesto, usuario, 
@@ -283,23 +437,60 @@ const saveFactura = async ( req, res = response ) => {
                                 '', '', 0.00, 'FAC', 0, 
                                 0.00, '', 0, '', 0, 
                                 1, '', 0.00, $11) RETURNING *`, [
-                                    factura, codigo, detalle, cantidad, precio,
-                                    descto, total, bodega, impuesto, userScae, id
-                                ]);
-                                
-                    //ME QUEDÉ AQUÍ
-                    listProductsSaved.push({...resultDetalle.rows[0]});
-                    console.log(listProductsSaved);
+                                factura, listProducts[i].codigo, listProducts[i].detalle, listProducts[i].cantidad, 
+                                listProducts[i].precio, listProducts[i].descto, listProducts[i].total, 
+                                listProducts[i].bodega, listProducts[i].impuesto, userScae, id ]);
+                    // console.log(resultDetalle.rows[0]);
+                    listProductsSaved.push(resultDetalle.rows[0]);
+
                     poolDetalle.end();
-                });
+                }
                 
                 if( listProductsSaved.length > 0 ) {
-                    const activeInvoice = { 
-                        ...encabezadoGuardado, 
-                        listProducts: listProductsSaved, 
-                        clienteRegistraIva: clienteRegistraIva,
-                    };
+                    const listProductsSavedPrepared = listProductsSaved.map( (item) => {
+                        return {
+                            bodega: item.bodega.trim(),
+                            codigo: item.codigo.trim(),
+                            detalle: item.detalle.trim(),
+                            precio: item.precio.trim(),
+                            impuesto: item.impuesto.trim(),
+                            cantidad: item.cantidad.trim(),
+                            descto: parseFloat(item.descto.trim()).toFixed(2),
+                            total: item.total.trim(),
+                        }
+                    });
 
+                    const activeInvoice = { 
+                        factura: encabezadoGuardado.factura.trim(),
+                        dividendos: encabezadoGuardado.dividendos.trim(),
+                        vendedor: encabezadoGuardado.vendedor.trim(),
+                        bodega: encabezadoGuardado.bodega.trim(),
+                        comentario: encabezadoGuardado.comentario.trim(),
+                        fecha: encabezadoGuardado.fecha,
+                        vence: encabezadoGuardado.vence,
+                        tip: encabezadoGuardado.tip.trim(),
+                        cliente: encabezadoGuardado.cliente.trim(),
+                        ruc: encabezadoGuardado.ruc.trim(),
+                        nombrec: encabezadoGuardado.nombrec.trim(),
+                        direccion: encabezadoGuardado.direccion.trim(),
+                        telefono: encabezadoGuardado.telefono.trim(),
+                        email: encabezadoGuardado.email.trim(),
+                        clienteRegistraIva: clienteRegistraIva,
+                        listProducts: listProductsSavedPrepared,
+                        base_0: parseFloat(encabezadoGuardado.base_0.trim()).toFixed(2),
+                        base_i: parseFloat(encabezadoGuardado.base_i.trim()).toFixed(2),
+                        bruto: parseFloat(encabezadoGuardado.bruto.trim()).toFixed(2),
+                        descto: encabezadoGuardado.descto.trim(),
+                        impuesto: encabezadoGuardado.impuesto.trim(),
+                        neto: parseFloat(encabezadoGuardado.neto.trim()).toFixed(2),
+                        pdescto: parseFloat(encabezadoGuardado.pdescto.trim()).toFixed(2),
+                        total: encabezadoGuardado.total.trim(),
+                    };
+                    
+                    // const poolScae = db(user, password, database);
+                    // const respScae = await poolScae.query(`select existencias(?xcodi,?xbodi)`);
+                    // poolScae.end();
+                    // console.log(respScae);
                     return res.json({
                         ok: true,
                         msg: activeInvoice
@@ -320,7 +511,6 @@ const saveFactura = async ( req, res = response ) => {
             }
 
     } catch (error) {
-        console.log(error);
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
                 ok: false,
@@ -336,9 +526,303 @@ const saveFactura = async ( req, res = response ) => {
     }
 }
 
+const updateFactura = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, user:userScae } = req.body;        
+    const { vendedor, dividendos, factura, listProducts, clienteRegistraIva, fecha, vence, tip, 
+        bodega, comentario, cliente, ruc, nombrec, direccion, telefono, email, bruto,
+        base_0, base_i, impuesto, total, neto, descto, pdescto, id } = req.body;
+        
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        //Traer el nombre de la bodega por el código
+        const poolVendedor = db(user, password, database);
+        const resultVendedor = await poolVendedor.query(`SELECT codigoven, nombreven FROM ${ schema }.scdetaven  
+            WHERE codigoven = $1`, [vendedor.trim()]);
+        const nombreVendedor = resultVendedor.rows[0].nombreven.trim(); //$24 = nvendedor
+        poolVendedor.end();
+
+        const poolDividendos = db(user, password, database);
+        const resultDividendos = await poolDividendos.query(`SELECT codigo, detalle FROM ${ schema }.scctadiv WHERE codigo = $1`, [dividendos.trim()]);
+        const nombreDividendos = resultDividendos.rows[0].detalle.trim(); //$25 = nforma
+
+        poolDividendos.end();
+
+        const pool = db(user, password, database);
+
+        const result = await pool.query(
+            `UPDATE ${ schema }.scencfac SET fecha=$1, vence=$2, tip=$3, dividendos=$4, 
+                vendedor=$5, bodega=$6, comentario=$7, cliente=$8, ruc=$9, 
+                nombrec=$10, direccion=$11, telefono=$12, email=$13, bruto=$14, 
+                base_0=$15, base_i=$16, impuesto=$17, total=$18, neto=$19, 
+                descto=$20, pdescto=$21, usuario=$22, nvendedor=$23, nforma=$24, hora=localtimestamp 
+                WHERE factura=$25 RETURNING *`, [
+                        fecha, vence, tip, dividendos, 
+                        vendedor, bodega, comentario, cliente, ruc,
+                        nombrec, direccion, telefono, email, bruto,
+                        base_0, base_i, impuesto, total, neto,
+                        descto, pdescto, userScae, nombreVendedor, nombreDividendos, factura 
+                    ]);
+
+            let encabezadoGuardado = null;
+            encabezadoGuardado = result.rows[0];
+            
+            pool.end();
+
+            //Guardar detalle de la factura
+            if( encabezadoGuardado ) {
+                //Eliminar productos para guardar actializados.
+                const poolDelete = db(user, password, database);
+                const resultDelete = await poolDelete.query(`DELETE FROM ${ schema }.screnfac WHERE factura=$1 RETURNING *`, [factura]);
+                poolDelete.end();
+
+                if( resultDelete.rowCount === 0 ){
+                    return res.status(404).json({
+                        ok: false,
+                        msg: 'Problemas al editar el detalle de la factura'
+                    });
+                }
+
+                //Volver a guardar los productos.
+                let listProductsSaved = [];
+                const listProductsLength = listProducts.length;
+
+                for( let i = 0; i < listProductsLength; i++ ) {
+
+                    //Traer el último id y aumentar uno
+                    const poolId = db(user, password, database);
+                    const resultId = await poolId.query(`SELECT id FROM ${ schema }.screnfac order by id desc limit 1;`);
+                    let idItem = 0
+                    if( resultId.rows.length > 0 )
+                        idItem = parseInt(resultId.rows[0].id);
+                    idItem = idItem + 1;
+
+                    poolId.end();
+
+                    const poolDetalle = db(user, password, database);
+
+                    const resultDetalle = await poolDetalle.query(
+                        `INSERT INTO ${ schema }.screnfac (factura, codigo, detalle, cantidad, precio, 
+                            descto, total, bodega, impuesto, usuario, 
+                            hora, convertir, comentario, completo, unidad, 
+                            serial, detserial, fechaser, reembolso, uconvertir, 
+                            nomgru, c_costo, medida, origen, cambios, 
+                            bonifica, comenn, servicio, c_barra, activo, 
+                            deducible, tipo, ptarj, id) 
+                            VALUES ($1, $2, $3, $4, $5, 
+                                $6, $7, $8, $9, $10, 
+                                localtimestamp, 0.00, '', 1, 'UND', 
+                                '', '', localtimestamp, 0.00, '', 
+                                '', '', 0.00, 'FAC', 0, 
+                                0.00, '', 0, '', 0, 
+                                1, '', 0.00, $11) RETURNING *`, [
+                                factura, listProducts[i].codigo, listProducts[i].detalle, listProducts[i].cantidad, 
+                                listProducts[i].precio, listProducts[i].descto, listProducts[i].total, 
+                                listProducts[i].bodega, listProducts[i].impuesto, userScae, idItem ]);
+                    
+                    listProductsSaved.push(resultDetalle.rows[0]);
+
+                    poolDetalle.end();
+                }
+                
+                if( listProductsSaved.length > 0 ) {
+                    const listProductsSavedPrepared = listProductsSaved.map( (item) => {
+                        return {
+                            bodega: item.bodega.trim(),
+                            codigo: item.codigo.trim(),
+                            detalle: item.detalle.trim(),
+                            precio: item.precio.trim(),
+                            impuesto: item.impuesto.trim(),
+                            cantidad: item.cantidad.trim(),
+                            descto: parseFloat(item.descto.trim()).toFixed(2),
+                            total: item.total.trim(),
+                        }
+                    });
+
+                    const activeInvoice = { 
+                        factura: encabezadoGuardado.factura.trim(),
+                        dividendos: encabezadoGuardado.dividendos.trim(),
+                        vendedor: encabezadoGuardado.vendedor.trim(),
+                        bodega: encabezadoGuardado.bodega.trim(),
+                        comentario: encabezadoGuardado.comentario.trim(),
+                        fecha: encabezadoGuardado.fecha,
+                        vence: encabezadoGuardado.vence,
+                        tip: encabezadoGuardado.tip.trim(),
+                        cliente: encabezadoGuardado.cliente.trim(),
+                        ruc: encabezadoGuardado.ruc.trim(),
+                        nombrec: encabezadoGuardado.nombrec.trim(),
+                        direccion: encabezadoGuardado.direccion.trim(),
+                        telefono: encabezadoGuardado.telefono.trim(),
+                        email: encabezadoGuardado.email.trim(),
+                        clienteRegistraIva: clienteRegistraIva,
+                        listProducts: listProductsSavedPrepared,
+                        base_0: parseFloat(encabezadoGuardado.base_0.trim()).toFixed(2),
+                        base_i: parseFloat(encabezadoGuardado.base_i.trim()).toFixed(2),
+                        bruto: parseFloat(encabezadoGuardado.bruto.trim()).toFixed(2),
+                        descto: encabezadoGuardado.descto.trim(),
+                        impuesto: encabezadoGuardado.impuesto.trim(),
+                        neto: parseFloat(encabezadoGuardado.neto.trim()).toFixed(2),
+                        pdescto: parseFloat(encabezadoGuardado.pdescto.trim()).toFixed(2),
+                        total: encabezadoGuardado.total.trim(),
+                    };
+                    
+                    return res.json({
+                        ok: true,
+                        msg: activeInvoice
+                    });
+
+                }else{
+                    return res.status(400).json({
+                        ok: false,
+                        msg: 'Error al editar el detalle de la factura'
+                    });
+                }
+
+            }else{
+                res.json({
+                    ok: false,
+                    msg: 'Error al editar el encabezado de la factura'
+                });
+            }
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
+const deleteFactura = async (req, res) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+    const { id } = req.params;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(`DELETE FROM ${ schema }.scencfac WHERE factura = $1 RETURNING *`, [id]);
+        pool.end();
+        if( result.rowCount > 0 ) {
+            return res.json({
+                ok: true,
+                msg: 'Factura eliminada',
+                deleted: result.rows[0]
+            });
+        }
+
+        if( result.rowCount === 0 ){
+            return res.status(404).json({
+                ok: false,
+                msg: 'La factura no existe'
+            });
+        }
+
+        return res.status(400).json({
+            ok: false,
+            msg: 'Error al eliminar la factura'
+        });
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
+const firmaFactura = async (req, res) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+    const { id } = req.params;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(`SELECT factura FROM ${ schema }.scencfac 
+        WHERE autoriza = '' AND factura = $1`, [id]);
+        
+        pool.end();
+
+        if( result.rowCount > 0 ) {
+            const poolFirma = db(user, password, database);
+            const resultFirma = await poolFirma.query(`UPDATE ${ schema }.scencfac SET autoriza = 'APP' 
+            WHERE factura = $1 RETURNING *`, [id]);
+
+            poolFirma.end();
+
+            if( resultFirma.rowCount > 0 ) {
+                return res.json({
+                    ok: true,
+                    msg: 'Factura firmada',
+                    firmada: result.rows[0]
+                });
+            }
+            
+            if( resultFirma.rowCount === 0 ){
+                return res.status(404).json({
+                    ok: false,
+                    msg: 'La factura ya está firmada o no existe'
+                });
+            }
+        }
+
+
+        return res.status(400).json({
+            ok: false,
+            msg: 'Error al firmar la factura'
+        });
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
     listUltimaFactura,
+    lastNumFactura,
     saveFactura,
+    updateFactura,
+    deleteFactura,
+    firmaFactura,
+    listFacturaByNumber
 }
