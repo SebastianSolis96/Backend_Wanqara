@@ -815,6 +815,54 @@ const firmaFactura = async (req, res) => {
     }
 }
 
+const listFacturasByParam = async ( req, res = response ) => {
+
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    const { id } = req.params;
+    const idUpperCase = id.toUpperCase();
+    const idLowerCase = id.toLowerCase();
+    const idCapital = idLowerCase.replace(/^\w/, (c) => c.toUpperCase());
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT FACTURA, FECHA, RUC, NOMBREC, TOTAL 
+            FROM ${ schema }.scencfac WHERE 
+            FACTURA LIKE '%'||$1||'%' OR FACTURA LIKE '%'||$2||'%' OR FACTURA LIKE '%'||$3||'%' OR FACTURA LIKE '%'||$4||'%' 
+            OR RUC LIKE '%'||$1||'%' OR RUC LIKE '%'||$2||'%' OR RUC LIKE '%'||$3||'%' OR RUC LIKE '%'||$4||'%' 
+            OR NOMBREC LIKE '%'||$1||'%' OR NOMBREC LIKE '%'||$2||'%' OR NOMBREC LIKE '%'||$3||'%' OR NOMBREC LIKE '%'||$4||'%'`, 
+            [id, idUpperCase, idLowerCase, idCapital]);
+            
+        res.json({
+            ok: true,
+            msg: result.rows
+        });
+
+        pool.end();
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
@@ -824,5 +872,6 @@ module.exports = {
     updateFactura,
     deleteFactura,
     firmaFactura,
-    listFacturaByNumber
+    listFacturaByNumber,
+    listFacturasByParam
 }

@@ -5,7 +5,7 @@ const { Router } = require('express');
 const router = Router();
 
 const { check } = require('express-validator');
-const { porcentajeIva, importaExistencias, listUltimaFactura, saveFactura, updateFactura, deleteFactura, lastNumFactura, firmaFactura } = require('../controllers/invoice');
+const { porcentajeIva, importaExistencias, listUltimaFactura, saveFactura, updateFactura, deleteFactura, lastNumFactura, firmaFactura, listFacturaByNumber, listFacturasByParam } = require('../controllers/invoice');
 const { fieldValidator } = require('../middlewares/field-validator');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
@@ -33,6 +33,8 @@ router.delete( '/actions/eliminafactura/:id', deleteFactura );
 
 router.post( '/actions/firmafactura/:id', firmaFactura );
 
-router.post( '/actions/facturapornumero/:id', firmaFactura );
+router.post( '/actions/facturapornumero/:id', listFacturaByNumber );
+
+router.post( '/actions/facturaporparam/:id', listFacturasByParam );
 
 module.exports = router;
