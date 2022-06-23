@@ -33,10 +33,11 @@ const listUltimoProducto = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -79,10 +80,11 @@ const listProductoByCodigo = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -118,10 +120,11 @@ const listProductos = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -165,10 +168,61 @@ const listProductosByParam = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
+            });
+        }
+    }
+}
+
+const listProductosByParamConExistencias = async ( req, res = response ) => {
+
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    const { id } = req.params;
+    const idUpperCase = id.toUpperCase();
+    const idLowerCase = id.toLowerCase();
+    const idCapital = idLowerCase.replace(/^\w/, (c) => c.toUpperCase());
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT CODIGOA, NOMBREA, BODEGA, PRECIO_1, IMPUESTO, GRUPO, SERVICIO, EXISTENCIA 
+            FROM ${ schema }.SCDETAART WHERE 
+            CODIGOA LIKE '%'||$1||'%' OR CODIGOA LIKE '%'||$2||'%' OR CODIGOA LIKE '%'||$3||'%' OR CODIGOA LIKE '%'||$4||'%' 
+            OR NOMBREA LIKE '%'||$1||'%' OR NOMBREA LIKE '%'||$2||'%' OR NOMBREA LIKE '%'||$3||'%' OR NOMBREA LIKE '%'||$4||'%'`, 
+            [id, idUpperCase, idLowerCase, idCapital]);
+            
+        const products = result.rows.filter( c => c.existencia > 0 );
+        
+        res.json({
+            ok: true,
+            msg: products
+        });
+
+        pool.end();
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
             });
         }
     }
@@ -213,10 +267,11 @@ const listProductosByParamAndStore = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -287,11 +342,19 @@ const saveProducto = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                error: error
-            });
+            if( error.code === '23505' ){
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'El artículo ya existe',
+                });
+            }else{
+                console.log(error);
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'Ha ocurrido un error',
+                    // error: error
+                });
+            }
         }
     }
 }
@@ -335,10 +398,11 @@ const checkProductoOnInvoices = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -380,10 +444,11 @@ const updateProducto = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -431,10 +496,11 @@ const deleteProducto = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -468,10 +534,11 @@ const listGruposArticulos = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -510,10 +577,11 @@ const listArticulosPorFactura = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -524,6 +592,7 @@ module.exports = {
     listProductoByCodigo,
     listProductos,
     listProductosByParam,
+    listProductosByParamConExistencias,
     saveProducto,
     checkProductoOnInvoices,
     updateProducto,

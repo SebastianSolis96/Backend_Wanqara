@@ -31,10 +31,11 @@ const porcentajeIva = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -68,10 +69,11 @@ const importaExistencias = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -149,10 +151,11 @@ const listUltimaFactura = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -230,10 +233,11 @@ const listFacturaByNumber  = async (req, res) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -301,10 +305,11 @@ const lastNumFactura = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -434,12 +439,13 @@ const saveFactura = async ( req, res = response ) => {
                                 $6, $7, $8, $9, $10, 
                                 localtimestamp, 0.00, '', 1, 'UND', 
                                 '', '', localtimestamp, 0.00, '', 
-                                '', '', 0.00, 'FAC', 0, 
-                                0.00, '', 0, '', 0, 
+                                $12, '', 0.00, 'FAC', 0, 
+                                0.00, '', $13, '', 0, 
                                 1, '', 0.00, $11) RETURNING *`, [
                                 factura, listProducts[i].codigo, listProducts[i].detalle, listProducts[i].cantidad, 
                                 listProducts[i].precio, listProducts[i].descto, listProducts[i].total, 
-                                listProducts[i].bodega, listProducts[i].impuesto, userScae, id ]);
+                                listProducts[i].bodega, listProducts[i].impuesto, userScae, id, 
+                                listProducts[i].grupo, parseInt(listProducts[i].servicio) ]);
                     // console.log(resultDetalle.rows[0]);
                     listProductsSaved.push(resultDetalle.rows[0]);
 
@@ -511,17 +517,26 @@ const saveFactura = async ( req, res = response ) => {
             }
 
     } catch (error) {
+        console.log(error);
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
                 ok: false,
                 msg: 'Credenciales incorrectas'
             });
         }else{
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                error: error
-            });
+            if( error.code === '23505' ){
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'La factura ya existe',
+                });
+            }else{
+                console.log(error);
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'Ha ocurrido un error',
+                    // error: error
+                });
+            }
         }
     }
 }
@@ -695,10 +710,11 @@ const updateFactura = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -744,10 +760,11 @@ const deleteFactura = async (req, res) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -809,7 +826,7 @@ const firmaFactura = async (req, res) => {
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -854,10 +871,11 @@ const listFacturasByParam = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }

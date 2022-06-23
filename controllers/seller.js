@@ -31,10 +31,11 @@ const listarVendedores = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }

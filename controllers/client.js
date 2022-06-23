@@ -33,10 +33,11 @@ const listUltimoCliente = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -79,10 +80,11 @@ const listClienteByCodigo = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -118,10 +120,11 @@ const listClientes = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -166,10 +169,11 @@ const listClientesByParam = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -214,10 +218,11 @@ const checkClientOnInvoices = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -295,11 +300,19 @@ const saveCliente = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                error: error
-            });
+            if( error.code === '23505' ){
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'El cliente ya existe',
+                });
+            }else{
+                console.log(error);
+                return res.status(500).json({
+                    ok: false,
+                    msg: 'Ha ocurrido un error',
+                    // error: error
+                });
+            }
         }
     }
 }
@@ -348,10 +361,11 @@ const updateCliente = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -397,10 +411,11 @@ const deleteCliente = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }

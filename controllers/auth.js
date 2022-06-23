@@ -16,7 +16,7 @@ const credentialsValidator = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query('SELECT NOW()');
-        console.log(result.rows[0]);
+        // console.log(result.rows[0]);
 
         res.json({
             ok: true,
@@ -40,10 +40,11 @@ const credentialsValidator = async ( req, res = response ) => {
                 msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -100,10 +101,11 @@ const loginScae = async ( req, res = response ) => {
                 msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Datos incorrectos',
-                error: error
+                // error: error
             });
         }
     }
@@ -134,10 +136,11 @@ const listEmpresas = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
@@ -172,10 +175,11 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
+            console.log(error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
-                error: error
+                // error: error
             });
         }
     }
