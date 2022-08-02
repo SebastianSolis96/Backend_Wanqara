@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/static/css/main.efcb4c77.css",
-    "main.js": "/static/js/main.56ac4d98.js",
+    "main.js": "/static/js/main.d1f43329.js",
     "static/css/96.41094830.chunk.css": "/static/css/96.41094830.chunk.css",
     "static/js/96.8b0f950f.chunk.js": "/static/js/96.8b0f950f.chunk.js",
     "static/css/468.d482a443.chunk.css": "/static/css/468.d482a443.chunk.css",
-    "static/js/468.92d81b41.chunk.js": "/static/js/468.92d81b41.chunk.js",
-    "static/css/818.adf4b03c.chunk.css": "/static/css/818.adf4b03c.chunk.css",
-    "static/js/818.8ace2a07.chunk.js": "/static/js/818.8ace2a07.chunk.js",
-    "static/css/343.b78692d4.chunk.css": "/static/css/343.b78692d4.chunk.css",
-    "static/js/343.91648e56.chunk.js": "/static/js/343.91648e56.chunk.js",
+    "static/js/468.a6c6f568.chunk.js": "/static/js/468.a6c6f568.chunk.js",
+    "static/css/818.455533c0.chunk.css": "/static/css/818.455533c0.chunk.css",
+    "static/js/818.240f5892.chunk.js": "/static/js/818.240f5892.chunk.js",
+    "static/css/343.bd2a4f4b.chunk.css": "/static/css/343.bd2a4f4b.chunk.css",
+    "static/js/343.15c3f704.chunk.js": "/static/js/343.15c3f704.chunk.js",
     "static/css/782.2b5aa761.chunk.css": "/static/css/782.2b5aa761.chunk.css",
-    "static/js/782.a8b64cf4.chunk.js": "/static/js/782.a8b64cf4.chunk.js",
+    "static/js/782.a1f05f57.chunk.js": "/static/js/782.a1f05f57.chunk.js",
     "static/js/461.66475525.chunk.js": "/static/js/461.66475525.chunk.js",
     "static/js/578.c9ad2170.chunk.js": "/static/js/578.c9ad2170.chunk.js",
     "static/js/413.5182401f.chunk.js": "/static/js/413.5182401f.chunk.js",
@@ -23,7 +23,7 @@
     "static/js/816.9b12c9f2.chunk.js": "/static/js/816.9b12c9f2.chunk.js",
     "static/js/838.60ca9dae.chunk.js": "/static/js/838.60ca9dae.chunk.js",
     "static/js/437.604d3140.chunk.js": "/static/js/437.604d3140.chunk.js",
-    "static/js/888.167e4421.chunk.js": "/static/js/888.167e4421.chunk.js",
+    "static/js/59.2bd0fc99.chunk.js": "/static/js/59.2bd0fc99.chunk.js",
     "static/media/icon404.svg": "/static/media/icon404.1cd50b9c3d59fec2b3c00c5d0b502f19.svg",
     "static/media/clientIcon.svg": "/static/media/clientIcon.65c9cf64071e92e5fd76.svg",
     "static/media/homeBanner.svg": "/static/media/homeBanner.f1c9dc658cf284fbc0907c3c5b8894d2.svg",
@@ -66,6 +66,6 @@
   },
   "entrypoints": [
     "static/css/main.efcb4c77.css",
-    "static/js/main.56ac4d98.js"
+    "static/js/main.d1f43329.js"
   ]
 }
