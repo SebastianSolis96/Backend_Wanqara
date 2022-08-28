@@ -881,6 +881,98 @@ const listFacturasByParam = async ( req, res = response ) => {
     }
 }
 
+const listFacturasParaAnular = async ( req, res = response ) => {
+
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT factura, fecha, comentario
+            FROM ${ schema }.scencfac WHERE anulado = 'P'`);
+            
+        res.json({
+            ok: true,
+            msg: result.rows
+        });
+
+        pool.end();
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
+const anularFactura = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, invoicesList } = req.body; 
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+
+        let checkCancelledInvoicesList = [];
+
+        for( let i = 0; i < invoicesList.length ; i++ ) {
+            const pool = db(user, password, database);
+
+            const result = await pool.query(
+                `UPDATE ${ schema }.scencfac SET anulado = 'S'  
+                    WHERE factura=$1 RETURNING *`, [ invoicesList[i] ]);
+
+            checkCancelledInvoicesList.push(result.rows[0]);
+            
+            pool.end();
+        }
+        console.log(checkCancelledInvoicesList);
+
+        if( checkCancelledInvoicesList.length === invoicesList.length ){
+            return res.json({
+                ok: true,
+                msg: checkCancelledInvoicesList
+            });
+        }else{
+            return res.status(400).json({
+                ok: false,
+                msg: 'No se anularon todas las facturas seleccionadas. Por favor vuelva a intentarlo'
+            });
+        }
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
@@ -891,5 +983,7 @@ module.exports = {
     deleteFactura,
     firmaFactura,
     listFacturaByNumber,
-    listFacturasByParam
+    listFacturasByParam,
+    listFacturasParaAnular,
+    anularFactura
 }

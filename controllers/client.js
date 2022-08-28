@@ -91,7 +91,6 @@ const listClienteByCodigo = async ( req, res = response ) => {
 }
 
 const listClientes = async ( req, res = response ) => {
-
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
 
     //Desencriptar credenciales
@@ -114,6 +113,7 @@ const listClientes = async ( req, res = response ) => {
         pool.end();
 
     } catch (error) {
+        console.log(error);
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
                 ok: false,
@@ -229,7 +229,7 @@ const checkClientOnInvoices = async ( req, res = response ) => {
 }
 
 const saveCliente = async ( req, res = response ) => {
-    
+    console.log('xdd');
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, userScae } = req.body;        
     let { codigo, ruc, nombre, grabaIva, direccion, telefono, correo } = req.body;
 
