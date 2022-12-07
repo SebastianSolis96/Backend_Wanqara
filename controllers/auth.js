@@ -62,9 +62,12 @@ const loginScae = async ( req, res = response ) => {
 
     try {
         const pool = db(user, password, database);
-        const result = await pool.query('SELECT PASSWORD FROM POSTGRES.SCCLAVE WHERE USUARIO = $1', [userScae]);
+        // const result = await pool.query('SELECT PASSWORD FROM POSTGRES.SCCLAVE WHERE USUARIO = $1', [userScae]);
+        const result = await pool.query('SELECT PASSWORD, USID FROM POSTGRES.SCCLAVE WHERE USUARIO = $1', [userScae]);
 
         const passwordEncryptScae = result.rows[0].password;
+        
+        const usid = result.rows[0].usid;
 
         const passwordDecrypt = decryptWord( passwordEncryptScae );
 
@@ -77,6 +80,7 @@ const loginScae = async ( req, res = response ) => {
                 ok: true,
                 msg: 'Datos correctos',
                 userScae: userScaeEncrypt,
+                usid,
                 token
             });
 
@@ -113,14 +117,17 @@ const loginScae = async ( req, res = response ) => {
 
 const listEmpresas = async ( req, res = response ) => {
 
-    const { userEncrypt, passwordEncrypt, databaseEncrypt } = req.body
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, usid } = req.body
 
     //Desencriptar credenciales
     const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
 
     try {
         const pool = db(user, password, database);
-        const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS');
+        // const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS');
+        const result = await pool.query(`SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, 
+            DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS 
+            WHERE usuario_empresa = $1;`, [ usid ]);
             
         res.json({
             ok: true,
