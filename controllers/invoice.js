@@ -95,7 +95,7 @@ const listUltimaFactura = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
             cliente, ruc, nombrec, direccion, telefono, email, 
-            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto 
+            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo 
             FROM ${ schema }.scencfac ORDER BY factura DESC LIMIT 1`);
         
         let ultimaFactura;
@@ -176,7 +176,7 @@ const listFacturaByNumber  = async (req, res) => {
         const result = await pool.query(
             `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
             cliente, ruc, nombrec, direccion, telefono, email, 
-            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto 
+            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo 
             FROM ${ schema }.scencfac WHERE factura = $1`, [id]);
         
         pool.end();
@@ -973,6 +973,52 @@ const anularFactura = async ( req, res = response ) => {
     }
 }
 
+const deleteErrorFirma = async (req, res) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body;
+    const { id } = req.params;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema y usuario.
+    const schema = decryptWord(schemaEncrypt);
+    try {
+        //Encabezado última factura
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `UPDATE ${ schema }.scencfac SET cmotivo = '' WHERE factura = $1`, [id]);
+        
+        pool.end();
+
+        if( result.rowCount > 0 ) {
+            return res.json({
+                ok: true,
+                msg: 'Factura eliminada',
+            });
+        }
+
+        return res.status(400).json({
+            ok: false,
+            msg: 'No se ha podido eliminar el error',
+        });
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
@@ -985,5 +1031,6 @@ module.exports = {
     listFacturaByNumber,
     listFacturasByParam,
     listFacturasParaAnular,
-    anularFactura
+    anularFactura,
+    deleteErrorFirma
 }
