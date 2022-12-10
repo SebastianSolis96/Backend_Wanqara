@@ -16,13 +16,13 @@ const listarVendedores = async ( req, res = response ) => {
         const pool = db(user, password, database);
         const result = await pool.query(
             `SELECT codigoven, nombreven FROM ${ schema }.scdetaven`);
-            
+        
+        pool.end();
+        
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){

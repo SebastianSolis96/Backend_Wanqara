@@ -17,12 +17,12 @@ const listarPlazo = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT codigo, detalle FROM ${ schema }.scctadiv`);
             
+        pool.end();
+        
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){

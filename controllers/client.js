@@ -18,13 +18,13 @@ const listUltimoCliente = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT CODIGOC, RUC, NOMBREC, DIRECCION, TELEFONO, E_MAIL, CIUDAD, REG_IVA 
             FROM ${ schema }.SCDETACLI ORDER BY HORA DESC LIMIT 1`);
+        
+        pool.end();
             
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -66,12 +66,12 @@ const listClienteByCodigo = async ( req, res = response ) => {
             CODIGOC = $1 OR CODIGOC = $2 OR CODIGOC = $3 OR CODIGOC = $4`,
             [id, idUpperCase, idLowerCase, idCapital]);
             
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -105,12 +105,12 @@ const listClientes = async ( req, res = response ) => {
             `SELECT CODIGOC, RUC, NOMBREC, DIRECCION, TELEFONO, E_MAIL, CIUDAD, REG_IVA 
             FROM ${ schema }.SCDETACLI  ORDER BY HORA DESC`);
             
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows,
         });
-
-        pool.end();
 
     } catch (error) {
         console.log(error);
@@ -155,12 +155,12 @@ const listClientesByParam = async ( req, res = response ) => {
             OR NOMBREC LIKE '%'||$1||'%' OR NOMBREC LIKE '%'||$2||'%' OR NOMBREC LIKE '%'||$3||'%' OR NOMBREC LIKE '%'||$4||'%'`, 
             [id, idUpperCase, idLowerCase, idCapital]);
             
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -197,6 +197,8 @@ const checkClientOnInvoices = async ( req, res = response ) => {
             `SELECT FACT.CLIENTE FROM ${ schema }.SCENCFAC FACT INNER JOIN ${ schema }.SCDETACLI CLI 
             ON FACT.CLIENTE = CLI.CODIGOC WHERE CODIGOC = $1`, [id]);
         
+        pool.end();
+
         if( result.rows.length > 0 ){
             res.json({
                 ok: true,
@@ -208,8 +210,6 @@ const checkClientOnInvoices = async ( req, res = response ) => {
                 msg: 'No existen facturas de este cliente'
             });
         }
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -285,13 +285,13 @@ const saveCliente = async ( req, res = response ) => {
                 '', 0, '', '', '', 0) RETURNING *`, [
                     codigo, nombre, ruc, direccion, telefono, correo, grabaIva, userScae
                 ]);
-            
+
+        pool.end(); 
+
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -346,13 +346,13 @@ const updateCliente = async ( req, res = response ) => {
             telefono=$4, e_mail=$5, reg_iva=$6 WHERE codigoc=$7 RETURNING *`, [
                 nombre, ruc, direccion, telefono, correo, grabaIva, id
             ]);
+
+        pool.end();
             
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -396,13 +396,13 @@ const deleteCliente = async ( req, res = response ) => {
             });
         }
 
+        pool.end();
+        
         res.status(400).json({
             ok: true,
             msg: 'Cliente eliminado',
             deleted: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){

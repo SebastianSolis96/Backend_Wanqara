@@ -16,13 +16,13 @@ const porcentajeIva = async ( req, res = response ) => {
         const pool = db(user, password, database);
         const result = await pool.query(
             `SELECT impuesto FROM ${ schema }.scconprm`);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows[0].impuesto
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -55,12 +55,12 @@ const importaExistencias = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT invcero FROM ${ schema }.scconprm`);
         
+        pool.end();
+        
         res.json({
             ok: true,
             msg: result.rows[0].invcero
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -101,6 +101,7 @@ const listUltimaFactura = async ( req, res = response ) => {
         let ultimaFactura;
         
         pool.end();
+
         if( result.rows.length > 0 ){
             ultimaFactura = result.rows[0];
             
@@ -124,6 +125,7 @@ const listUltimaFactura = async ( req, res = response ) => {
             
             //Agregar al objeto ultimaFactura el indicador de si el cliente en factura graba IVA o no
             ultimaFactura.clienteRegistraIva = indicadorIvaCliente;
+            
             poolIvaClienteFactura.end();
 
             const poolDetalleFactura = db(user, password, database);
@@ -857,12 +859,12 @@ const listFacturasByParam = async ( req, res = response ) => {
             OR NOMBREC LIKE '%'||$1||'%' OR NOMBREC LIKE '%'||$2||'%' OR NOMBREC LIKE '%'||$3||'%' OR NOMBREC LIKE '%'||$4||'%'`, 
             [id, idUpperCase, idLowerCase, idCapital]);
             
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -897,12 +899,12 @@ const listFacturasParaAnular = async ( req, res = response ) => {
             `SELECT factura, fecha, comentario
             FROM ${ schema }.scencfac WHERE anulado = 'P'`);
             
+        pool.end();
+        
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){

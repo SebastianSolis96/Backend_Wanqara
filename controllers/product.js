@@ -18,13 +18,13 @@ const listUltimoProducto = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT CODIGOA, NOMBREA, PRECIO_1, BODEGA, GRUPO, IMPUESTO, SERVICIO 
             FROM ${ schema }.SCDETAART ORDER BY HORA DESC LIMIT 1`);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -65,13 +65,13 @@ const listProductoByCodigo = async ( req, res = response ) => {
             FROM ${ schema }.SCDETAART WHERE 
             CODIGOA = $1 OR CODIGOA = $2 OR CODIGOA = $3 OR CODIGOA = $4`,
             [id, idUpperCase, idLowerCase, idCapital]);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -105,13 +105,13 @@ const listProductos = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT CODIGOA, NOMBREA, BODEGA, PRECIO_1, IMPUESTO, GRUPO, SERVICIO 
             FROM ${ schema }.SCDETAART ORDER BY HORA DESC`);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows,
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -153,13 +153,13 @@ const listProductosByParam = async ( req, res = response ) => {
             CODIGOA LIKE '%'||$1||'%' OR CODIGOA LIKE '%'||$2||'%' OR CODIGOA LIKE '%'||$3||'%' OR CODIGOA LIKE '%'||$4||'%' 
             OR NOMBREA LIKE '%'||$1||'%' OR NOMBREA LIKE '%'||$2||'%' OR NOMBREA LIKE '%'||$3||'%' OR NOMBREA LIKE '%'||$4||'%'`, 
             [id, idUpperCase, idLowerCase, idCapital]);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -204,12 +204,12 @@ const listProductosByParamConExistencias = async ( req, res = response ) => {
             
         const products = result.rows.filter( c => c.existencia > 0 );
         
+        pool.end();
+
         res.json({
             ok: true,
             msg: products
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -253,12 +253,12 @@ const listProductosByParamAndStore = async ( req, res = response ) => {
             AND BODEGA = $5`, 
             [id, idUpperCase, idLowerCase, idCapital, bodega]);
         
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -327,13 +327,13 @@ const saveProducto = async ( req, res = response ) => {
                 '') RETURNING *`, [
                     codigo, nombre, bodega, grupo, precio, impuesto, servicio, userScae
                 ]);
+
+        pool.end();
         
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -377,6 +377,8 @@ const checkProductoOnInvoices = async ( req, res = response ) => {
             `SELECT FACT.CODIGO FROM ${ schema }.SCRENFAC FACT INNER JOIN ${ schema }.SCDETAART ART 
             ON FACT.CODIGO = ART.CODIGOA WHERE CODIGOA = $1`, [id]);
         
+        pool.end();
+
         if( result.rows.length > 0 ){
             res.json({
                 ok: true,
@@ -388,8 +390,6 @@ const checkProductoOnInvoices = async ( req, res = response ) => {
                 msg: 'No existen facturas con este artículo'
             });
         }
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -429,13 +429,13 @@ const updateProducto = async ( req, res = response ) => {
             WHERE codigoa=$6 AND bodega=$7 RETURNING *`, [
                 nombre, grupo, precio, impuesto, servicio, id, bodega
             ]);
+
+        pool.end();
             
         res.json({
             ok: true,
             msg: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -474,6 +474,8 @@ const deleteProducto = async ( req, res = response ) => {
             `DELETE FROM ${ schema }.SCDETAART 
             WHERE codigoa=$1 AND bodega=$2 RETURNING *`, [ id, bodega ]);
         
+        pool.end();
+        
         if( result.rowCount === 0 ){
             return res.status(404).json({
                 ok: false,
@@ -486,8 +488,6 @@ const deleteProducto = async ( req, res = response ) => {
             msg: 'Artículo eliminado',
             deleted: result.rows[0]
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -519,13 +519,13 @@ const listGruposArticulos = async ( req, res = response ) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(`SELECT CODIGOGA, NOMBREGA FROM ${ schema }.SCGRUART`);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows,
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -563,12 +563,13 @@ const listArticulosPorFactura = async ( req, res = response ) => {
             FROM ${ schema }.screnfac where factura = $1;`
             , [factura] );
         console.log(result.rows);
+
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows,
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){

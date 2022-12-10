@@ -18,6 +18,8 @@ const credentialsValidator = async ( req, res = response ) => {
         const result = await pool.query('SELECT NOW()');
         // console.log(result.rows[0]);
 
+        pool.end();
+
         res.json({
             ok: true,
             msg: 'Validación correcta',
@@ -25,8 +27,6 @@ const credentialsValidator = async ( req, res = response ) => {
             password: passwordEncrypt, 
             database: databaseEncrypt
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -76,6 +76,8 @@ const loginScae = async ( req, res = response ) => {
             //Generar JWT
             const token = await generarJWT( userScae );
 
+            pool.end();
+
             res.json({
                 ok: true,
                 msg: 'Datos correctos',
@@ -83,8 +85,6 @@ const loginScae = async ( req, res = response ) => {
                 usid,
                 token
             });
-
-            pool.end();
 
         }else{
             return res.status(400).json({
@@ -128,13 +128,13 @@ const listEmpresas = async ( req, res = response ) => {
         const result = await pool.query(`SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, 
             DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS 
             WHERE useremp = $1;`, [ usid ]);
-            
+        
+        pool.end();
+
         res.json({
             ok: true,
             msg: result.rows
         });
-
-        pool.end();
 
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
@@ -164,6 +164,8 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
         const pool = db(user, password, database);
         const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS WHERE CODIGO = $1', [code]);
         
+        pool.end();
+        
         const { directorio } = result.rows[0];
         const directorioEncrypt = encryptWord(directorio.trim());
         
@@ -173,8 +175,6 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
             schema: directorioEncrypt
         });
 
-        pool.end();
-
     } catch (error) {
         if( error.code === '28P01' || error.code === '3D000' ){
             return res.status(400).json({
@@ -182,7 +182,7 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
                 msg: 'Credenciales incorrectas'
             });
         }else{
-            console.log(error);
+            console.log('Mi error: '+error);
             return res.status(500).json({
                 ok: false,
                 msg: 'Ha ocurrido un error',
