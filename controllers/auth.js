@@ -127,7 +127,7 @@ const listEmpresas = async ( req, res = response ) => {
         // const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS');
         const result = await pool.query(`SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, 
             DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS 
-            WHERE usuario_empresa = $1;`, [ usid ]);
+            WHERE useremp = $1;`, [ usid ]);
             
         res.json({
             ok: true,
