@@ -784,10 +784,11 @@ const firmaFactura = async (req, res) => {
     try {
         const pool = db(user, password, database);
         const result = await pool.query(`SELECT factura FROM ${ schema }.scencfac 
-        WHERE autoriza = '' AND factura = $1`, [id]);
+        WHERE length(autoriza) < 47 AND factura = $1`, [id]);
+        // WHERE autoriza = '' AND factura = $1`, [id]);
         
         pool.end();
-
+        
         if( result.rowCount > 0 ) {
             const poolFirma = db(user, password, database);
             const resultFirma = await poolFirma.query(`UPDATE ${ schema }.scencfac SET autoriza = 'APP' 
