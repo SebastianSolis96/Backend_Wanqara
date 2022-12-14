@@ -118,11 +118,12 @@ const listUltimaFactura = async ( req, res = response ) => {
                 FROM ${ schema }.SCDETACLI WHERE 
                 CODIGOC = $1 OR CODIGOC = $2 OR CODIGOC = $3 OR CODIGOC = $4`,
                 [id, idUpperCase, idLowerCase, idCapital]);
-            
+
             //Prepar indicador para si graba IVA o no el cliente en número
-            let indicadorIvaCliente = resultClienteFactura.rows[0].reg_iva.trim();
-            indicadorIvaCliente = parseInt(indicadorIvaCliente);
+            let indicadorIvaCliente = resultClienteFactura.rows[0]?.reg_iva?.trim() || '0';
             
+            indicadorIvaCliente = parseInt(indicadorIvaCliente);
+        
             //Agregar al objeto ultimaFactura el indicador de si el cliente en factura graba IVA o no
             ultimaFactura.clienteRegistraIva = indicadorIvaCliente;
             
