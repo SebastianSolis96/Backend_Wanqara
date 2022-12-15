@@ -95,7 +95,8 @@ const listUltimaFactura = async ( req, res = response ) => {
         const result = await pool.query(
             `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
             cliente, ruc, nombrec, direccion, telefono, email, 
-            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo, anulado 
+            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo, anulado, 
+            nforma, claveauto, horaauto 
             FROM ${ schema }.scencfac ORDER BY factura DESC LIMIT 1`);
         
         let ultimaFactura;
@@ -179,7 +180,8 @@ const listFacturaByNumber  = async (req, res) => {
         const result = await pool.query(
             `SELECT factura, fecha, vence, tip, dividendos, vendedor, bodega, comentario, 
             cliente, ruc, nombrec, direccion, telefono, email, 
-            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo, anulado   
+            bruto, base_0, base_i, impuesto, total, autoriza, neto, descto, pdescto, cmotivo, anulado, 
+            nforma, claveauto, horaauto    
             FROM ${ schema }.scencfac WHERE factura = $1`, [id]);
         
         pool.end();
