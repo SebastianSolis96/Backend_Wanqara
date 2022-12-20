@@ -192,6 +192,45 @@ const listEmpresaByCodigo = async ( req, res = response ) => {
     }
 }
 
+const listBranchBySchema = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT CODIGO, NOMBRE FROM ${ schema }.scctasucur ORDER BY CODIGO ASC`);
+            
+        pool.end();
+
+        res.json({
+            ok: true,
+            msg: result.rows,
+        });
+
+    } catch (error) {
+        console.log(error);
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
 const renewToken = async ( req, res = response ) => {
 
     const { user } = req;
@@ -211,5 +250,6 @@ module.exports = {
     loginScae,
     listEmpresas,
     listEmpresaByCodigo,
+    listBranchBySchema,
     renewToken,
 }

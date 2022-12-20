@@ -13,13 +13,15 @@ const {
     updateFactura, 
     deleteFactura, 
     lastNumFactura, 
+    lastNumFacturaSucursal,
     firmaFactura, 
     listFacturaByNumber, 
     listFacturasByParam, 
     anularFactura, 
     listFacturasParaAnular, 
     deleteErrorFirma, 
-    anularUnaFactura } = require('../controllers/invoice');
+    anularUnaFactura,
+    listAllFacturasToReport } = require('../controllers/invoice');
 const { fieldValidator } = require('../middlewares/field-validator');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
@@ -33,6 +35,8 @@ router.post( '/importaexistencias', importaExistencias );
 router.post( '/ultimafactura', listUltimaFactura );
 
 router.post( '/actions/ultimonumerofactura', lastNumFactura );
+
+router.post( '/actions/ultimonumerofacturasucursal', lastNumFacturaSucursal );
 
 // router.post( '/actions/factura', saveFactura );
 
@@ -88,5 +92,7 @@ router.post( '/actions/anulacion', anularFactura );
 router.post( '/actions/deleteerror/:id', deleteErrorFirma );
 
 router.post( '/actions/anularunafactura/:id', anularUnaFactura );
+
+router.post( '/actions/reportallinvoices/', listAllFacturasToReport );
 
 module.exports = router;

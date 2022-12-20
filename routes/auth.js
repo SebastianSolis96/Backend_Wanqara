@@ -5,7 +5,13 @@ const { Router } = require('express');
 const router = Router();
 
 const { check } = require('express-validator');
-const { credentialsValidator, loginScae, listEmpresas, listEmpresaByCodigo, renewToken } = require('../controllers/auth');
+const { 
+    credentialsValidator, 
+    loginScae, 
+    listEmpresas, 
+    listEmpresaByCodigo, 
+    renewToken,
+    listBranchBySchema } = require('../controllers/auth');
 const { fieldValidator } = require('../middlewares/field-validator');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
@@ -29,6 +35,8 @@ router.post( '/login',
 router.post('/empresas', validatorJWT, listEmpresas);
 
 router.post('/miempresa', validatorJWT, listEmpresaByCodigo);
+
+router.post('/missucursales', validatorJWT, listBranchBySchema);
 
 router.get('/renew', validatorJWT , renewToken);
 

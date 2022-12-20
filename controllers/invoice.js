@@ -320,6 +320,52 @@ const lastNumFactura = async ( req, res = response ) => {
     }
 }
 
+const lastNumFacturaSucursal = async ( req, res = response ) => {
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, myBranch } = req.body;
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT factura FROM ${ schema }.scencfac 
+            WHERE SUBSTR(FACTURA,1,$1)=$2
+            ORDER BY 1 DESC LIMIT 1`, [ myBranch.trim().length, myBranch.trim() ]);
+        pool.end();
+        
+        if( result.rows.length > 0 ){
+            res.json({
+                ok: true,
+                msg: result.rows[0].factura
+            });
+        }else{
+            res.json({
+                ok: true,
+                msg: null
+            });
+        }
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
 const saveFactura = async ( req, res = response ) => {
     const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt, user:userScae } = req.body;        
     const { vendedor, dividendos, factura, listProducts, clienteRegistraIva, fecha, vence, tip, 
@@ -1073,11 +1119,77 @@ const anularUnaFactura = async (req, res) => {
     }
 }
 
+const listAllFacturasToReport = async ( req, res = response ) => {
+
+    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
+
+    //Desencriptar credenciales
+    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
+
+    //Desencriptar schema
+    const schema = decryptWord(schemaEncrypt);
+
+    let listInvoices = {
+        list: [],
+        neto: '',
+        impuesto: '',
+        baseCero: '',
+        total: '' 
+    };
+
+    try {
+        const pool = db(user, password, database);
+        const result = await pool.query(
+            `SELECT factura, fecha, vence, vendedor, ruc, nombrec, 
+            neto, descto, impuesto, base_0, total 
+            FROM ${ schema }.scencfac ORDER BY factura ASC`, []);
+            
+        pool.end();
+        
+        listInvoices.list = result.rows;
+
+        const poolSum = db(user, password, database);
+        const resultSum = await poolSum.query(
+            `SELECT SUM( neto ) as neto_sum, SUM( impuesto ) as impuesto_sum, 
+            SUM( base_0 ) as base_0_sum, SUM( total ) as total_sum 
+            FROM ${ schema }.scencfac`, []);
+            
+        poolSum.end();
+
+        listInvoices.neto = resultSum.rows[0].neto_sum;
+        listInvoices.impuesto = resultSum.rows[0].impuesto_sum;
+        listInvoices.baseCero = resultSum.rows[0].base_0_sum;
+        listInvoices.total = resultSum.rows[0].total_sum;
+
+        res.json({
+            ok: true,
+            msg: listInvoices
+            // msg: result.rows
+        });
+
+    } catch (error) {
+        if( error.code === '28P01' || error.code === '3D000' ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Credenciales incorrectas'
+            });
+        }else{
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                msg: 'Ha ocurrido un error',
+                // error: error
+            });
+        }
+    }
+}
+
 module.exports = {
     porcentajeIva,
     importaExistencias,
     listUltimaFactura,
     lastNumFactura,
+    lastNumFacturaSucursal,
     saveFactura,
     updateFactura,
     deleteFactura,
@@ -1087,5 +1199,6 @@ module.exports = {
     listFacturasParaAnular,
     anularFactura,
     deleteErrorFirma,
-    anularUnaFactura
+    anularUnaFactura,
+    listAllFacturasToReport
 }
