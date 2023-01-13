@@ -1,15 +1,15 @@
-/* Bodega: host + /api/store */
+/* Categoría: host + /api/category */
 
 //CREACIÓN DE ROUTER
 const { Router } = require('express');
 const router = Router();
 
-const { listBodegas } = require('../controllers/store');
+const listCategoriesWithPromotion = require('../controllers/category');
 const { validatorJWT } = require('../middlewares/jwt-validator');
 
 //Todas las rutas deben pasar por la validación del JWT
 router.use( validatorJWT );
 
-router.post( '/', listBodegas );
+router.get( '/', listCategoriesWithPromotion );
 
 module.exports = router;

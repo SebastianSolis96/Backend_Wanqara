@@ -1,230 +1,51 @@
 const { response } = require('express');
-const { db } = require('../database/db');
-const { encryptCredentials } = require('../helpers/encryptCredentials');
-const { decryptCredentials } = require('../helpers/decryptCredentials');
-const { decryptWord } = require('../helpers/decryptWord');
+
+const pool = require('../database/db');
 const { encryptWord } = require('../helpers/encryptWord');
-const { generarJWT } = require('../helpers/jwt');
+const { createJWT } = require('../helpers/jwt');
 
-const credentialsValidator = async ( req, res = response ) => {
 
-    const { user, password, database } = req.body
+const login = async ( req, res = response ) => {
 
-    //Encriptar credenciales
-    const { userEncrypt, passwordEncrypt, databaseEncrypt } = encryptCredentials(user, password, database);
+    const { user, pass } = req.body
 
-    try {
-        const pool = db(user, password, database);
-        const result = await pool.query('SELECT NOW()');
-        // console.log(result.rows[0]);
-
-        pool.end();
-
-        res.json({
-            ok: true,
-            msg: 'Validación correcta',
-            user: userEncrypt, 
-            password: passwordEncrypt, 
-            database: databaseEncrypt
-        });
-
-    } catch (error) {
-        if( error.code === '28P01' || error.code === '3D000' ){
-            return res.status(400).json({
-                ok: false,
-                msg: 'Credenciales incorrectas'
-            });
-        }else if( error.code === '53300' ){
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
-            });
-        }else{
-            console.log(error);
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                // error: error
-            });
-        }
-    }
-}
-
-const loginScae = async ( req, res = response ) => {
-
-    const { userEncrypt, passwordEncrypt, databaseEncrypt, userScae, passwordScae } = req.body
-
-    //Desencriptar credenciales
-    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
-
-    //Enriptar usuario en login SCAE
-    const userScaeEncrypt = encryptWord(userScae);
+    //Enriptar pass
+    const passEncrypt = encryptWord(pass);
 
     try {
-        const pool = db(user, password, database);
-        // const result = await pool.query('SELECT PASSWORD FROM POSTGRES.SCCLAVE WHERE USUARIO = $1', [userScae]);
-        const result = await pool.query('SELECT PASSWORD, USID FROM POSTGRES.SCCLAVE WHERE USUARIO = $1', [userScae]);
+        const result = await pool.query(`SELECT name FROM public.user 
+            WHERE email = $1 AND password = $2`, [user, passEncrypt]);
 
-        const passwordEncryptScae = result.rows[0].password;
-        
-        const usid = result.rows[0].usid;
-
-        const passwordDecrypt = decryptWord( passwordEncryptScae );
-
-        if( passwordScae === passwordDecrypt ){
-
+        if( result.rows.length > 0 ){
             //Generar JWT
-            const token = await generarJWT( userScae );
-
-            pool.end();
+            const token = await createJWT( user );
 
             res.json({
                 ok: true,
-                msg: 'Datos correctos',
-                userScae: userScaeEncrypt,
-                usid,
+                msg: 'Correct data',
+                uid: user,
+                name: result.rows[0]?.name?.trim(),
                 token
             });
 
         }else{
             return res.status(400).json({
                 ok: false,
-                msg: 'Datos incorrectos'
+                msg: 'Incorrect data'
             });
         }
 
     } catch (error) {
-        if( error.code === '28P01' || error.code === '3D000' ){
-            return res.status(400).json({
-                ok: false,
-                msg: 'Credenciales incorrectas'
-            });
-        }else if( error.code === '53300' ){
+        if( error.code === '53300' ){
             return res.status(500).json({
                 ok: false,
-                msg: 'Ha superado el número de conexiones permitidas. Vuelva pronto',
+                msg: 'You have exceeded the number of connections allowed. Come back soon.',
             });
         }else{
             console.log(error);
             return res.status(500).json({
                 ok: false,
-                msg: 'Datos incorrectos',
-                // error: error
-            });
-        }
-    }
-}
-
-const listEmpresas = async ( req, res = response ) => {
-
-    const { userEncrypt, passwordEncrypt, databaseEncrypt, usid } = req.body
-
-    //Desencriptar credenciales
-    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
-
-    try {
-        const pool = db(user, password, database);
-        // const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS');
-        const result = await pool.query(`SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, 
-            DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS 
-            WHERE useremp = $1;`, [ usid ]);
-        
-        pool.end();
-
-        res.json({
-            ok: true,
-            msg: result.rows
-        });
-
-    } catch (error) {
-        if( error.code === '28P01' || error.code === '3D000' ){
-            return res.status(400).json({
-                ok: false,
-                msg: 'Credenciales incorrectas'
-            });
-        }else{
-            console.log(error);
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                // error: error
-            });
-        }
-    }
-}
-
-const listEmpresaByCodigo = async ( req, res = response ) => {
-
-    const { userEncrypt, passwordEncrypt, databaseEncrypt, code } = req.body
-
-    //Desencriptar credenciales
-    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
-
-    try {
-        const pool = db(user, password, database);
-        const result = await pool.query('SELECT CODIGO, NOMBRE, RUC, DIRECCION, EMAIL, DIRECTORIO FROM POSTGRES.SCDETAEMPRESAS WHERE CODIGO = $1', [code]);
-        
-        pool.end();
-        
-        const { directorio } = result.rows[0];
-        const directorioEncrypt = encryptWord(directorio.trim());
-        
-        res.json({
-            ok: true,
-            msg: result.rows[0],
-            schema: directorioEncrypt
-        });
-
-    } catch (error) {
-        if( error.code === '28P01' || error.code === '3D000' ){
-            return res.status(400).json({
-                ok: false,
-                msg: 'Credenciales incorrectas'
-            });
-        }else{
-            console.log('Mi error: '+error);
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
-                // error: error
-            });
-        }
-    }
-}
-
-const listBranchBySchema = async ( req, res = response ) => {
-    const { userEncrypt, passwordEncrypt, databaseEncrypt, schemaEncrypt } = req.body
-
-    //Desencriptar credenciales
-    const { user, password, database } = decryptCredentials(userEncrypt, passwordEncrypt, databaseEncrypt);
-
-    //Desencriptar schema
-    const schema = decryptWord(schemaEncrypt);
-
-    try {
-        const pool = db(user, password, database);
-        const result = await pool.query(
-            `SELECT CODIGO, NOMBRE FROM ${ schema }.scctasucur ORDER BY CODIGO ASC`);
-            
-        pool.end();
-
-        res.json({
-            ok: true,
-            msg: result.rows,
-        });
-
-    } catch (error) {
-        console.log(error);
-        if( error.code === '28P01' || error.code === '3D000' ){
-            return res.status(400).json({
-                ok: false,
-                msg: 'Credenciales incorrectas'
-            });
-        }else{
-            console.log(error);
-            return res.status(500).json({
-                ok: false,
-                msg: 'Ha ocurrido un error',
+                msg: 'Incorrect data',
                 // error: error
             });
         }
@@ -236,7 +57,7 @@ const renewToken = async ( req, res = response ) => {
     const { user } = req;
 
     //Generar JWT
-    const token = await generarJWT( user );
+    const token = await createJWT( user );
 
     res.json({
         ok: true,
@@ -246,10 +67,6 @@ const renewToken = async ( req, res = response ) => {
 } 
 
 module.exports = {
-    credentialsValidator,
-    loginScae,
-    listEmpresas,
-    listEmpresaByCodigo,
-    listBranchBySchema,
+    login,
     renewToken,
 }
